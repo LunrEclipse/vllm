@@ -148,25 +148,15 @@ class OpenAIServingCompletion(OpenAIServing):
                         raw_request.headers):
                     log_tracing_disabled_warning()
 
-                if isinstance(sampling_params, BeamSearchParams):
-                    generator = self.engine_client.beam_search(
-                        prompt_inputs["prompt_token_ids"],
-                        request_id_item,
-                        sampling_params,
-                    )
-                else:
-                    generator = self.engine_client.generate(
-                        {
-                            "prompt_token_ids":
-                            prompt_inputs["prompt_token_ids"]
-                        },
-                        sampling_params,
-                        request_id_item,
-                        lora_request=lora_request,
-                        prompt_adapter_request=prompt_adapter_request,
-                        trace_headers=trace_headers,
-                        priority=request.priority,
-                    )
+                generator = self.engine_client.generate(
+                    {"prompt_token_ids": prompt_inputs["prompt_token_ids"]},
+                    sampling_params,
+                    request_id_item,
+                    lora_request=lora_request,
+                    prompt_adapter_request=prompt_adapter_request,
+                    trace_headers=trace_headers,
+                    priority=request.priority,
+                )
 
                 generators.append(generator)
         except ValueError as e:

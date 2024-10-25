@@ -35,7 +35,7 @@ from vllm.lora.request import LoRARequest
 from vllm.model_executor.layers.sampler import SamplerOutput
 from vllm.outputs import EmbeddingRequestOutput, RequestOutput
 from vllm.prompt_adapter.request import PromptAdapterRequest
-from vllm.sampling_params import SamplingParams
+from vllm.sampling_params import BeamSearchParams, SamplingParams
 from vllm.transformers_utils.tokenizer_group import init_tokenizer_from_configs
 from vllm.utils import deprecate_kwargs
 
@@ -458,9 +458,16 @@ class MQLLMEngineClient(EngineClient):
         assert (prompt is not None and sampling_params is not None
                 and request_id is not None)
 
-        return self._process_request(prompt, sampling_params, request_id,
-                                     lora_request, trace_headers,
-                                     prompt_adapter_request, priority)
+        if isinstance(sampling_params, BeamSearchParams):
+            return self.beam_search(
+                prompt["prompt_token_ids"],
+                request_id,
+                sampling_params,
+            )
+        else:
+            return self._process_request(prompt, sampling_params, request_id,
+                                         lora_request, trace_headers,
+                                         prompt_adapter_request, priority)
 
     @overload  # DEPRECATED
     def encode(

@@ -27,7 +27,7 @@ from vllm.model_executor.layers.sampler import SamplerOutput
 from vllm.outputs import EmbeddingRequestOutput, RequestOutput
 from vllm.pooling_params import PoolingParams
 from vllm.prompt_adapter.request import PromptAdapterRequest
-from vllm.sampling_params import SamplingParams
+from vllm.sampling_params import BeamSearchParams, SamplingParams
 from vllm.sequence import ExecuteModelRequest
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 from vllm.usage.usage_lib import UsageContext
@@ -1026,16 +1026,23 @@ class AsyncLLMEngine(EngineClient):
             >>> # Process and return the final output
             >>> ...
         """
-        async for output in await self.add_request(
+        if isinstance(sampling_params, BeamSearchParams):
+            yield self.beam_search(
+                prompt["prompt_token_ids"],
                 request_id,
-                prompt,
                 sampling_params,
-                lora_request=lora_request,
-                trace_headers=trace_headers,
-                prompt_adapter_request=prompt_adapter_request,
-                priority=priority,
-        ):
-            yield LLMEngine.validate_output(output, RequestOutput)
+            )
+        else:
+            async for output in await self.add_request(
+                    request_id,
+                    prompt,
+                    sampling_params,
+                    lora_request=lora_request,
+                    trace_headers=trace_headers,
+                    prompt_adapter_request=prompt_adapter_request,
+                    priority=priority,
+            ):
+                yield LLMEngine.validate_output(output, RequestOutput)
 
     async def encode(
         self,
